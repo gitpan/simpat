@@ -1,0 +1,6 @@
+Simpat
+
+1999/03/28  Started. 
+1999/04/08  Basic functionality with one set of rules, life.spr, for
+            Conway's life incorporated. 
+1999/04/21  Added MesgBox.pm to .tar.gz.

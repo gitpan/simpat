@@ -1,0 +1,2 @@
+?package(local.simpat):needs="X11" section="Apps/Graphics" \
+	title="Simpat" command="/usr/lib/simpat/simpat"

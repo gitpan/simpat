@@ -1,0 +1,250 @@
+#!/usr/bin/perl -w
+
+# $Id: simpat,v 1.5 1999/04/21 18:56:13 root Exp root $
+
+# Copyright (c) Mark Summerfield 1999. All Rights Reserved.
+# May be used/distributed under the same terms as Perl.
+
+
+use strict ;
+
+use Tk ;
+use Tk::FileSelect ;
+use Tk::MesgBox ;
+use File::Basename ;
+use Cwd ;
+
+use FindBin qw( $RealBin ) ;
+use lib $RealBin ;
+
+
+use vars qw( $VERSION 
+             %Global   %Const    %Opt 
+             $Win      %Toolbar  %Canvas    $MenuFile
+             %Routine  %Param    @NewPixel  @OldPixel  @Pixel
+         ) ; 
+# %Routine is a hash keyed by name of subroutine references, e.g. for
+#          initialise, start, step, etc.
+# %Param is a hash keyed by variable name of values used by the 
+#        rules in operation.
+# We read from @OldPixel to calculate and write our results to @NewPixel,
+# then we draw @NewPixel onto the canvas. @Pixel stores references to each
+# rectangle on the canvas.
+
+$VERSION = '0.11' ; # Application version.
+
+my $DieOnWarn      = 0 ;
+my $WarnInDialogue = 0 ;
+
+my $Cursor         = 'left_ptr' ;
+my $Waiting        = 0 ;
+
+
+&initialise ;
+
+MainLoop ;
+
+
+sub initialise {
+
+    $Win = MainWindow->new() ;
+    $Win->title( "Loading  Simpat..." ) ; 
+    &cursor( 'watch' ) ;
+    $Win->protocol( "WM_DELETE_WINDOW", \&file::quit ) ;
+    $Win->update ;
+
+    &load_library( "simpat-globals.pl" ) ;
+    &load_library( "simpat-consts.pl" ) ;
+    &load_library( "simpat-opts.pl" ) ; # Default.
+    &read_opts ;                        # User.
+    &set_consts ;                       # Need opts to set these.
+    &load_library( "simpat-menu-ui.pl" ) ;
+    &load_library( "simpat-toolbar-cmd.pl" ) ;
+    &load_library( "simpat-toolbar-ui.pl" ) ;
+    &load_library( "simpat-canvas-ui.pl" ) ;
+    &load_library( "simpat-canvas-cmd.pl" ) ;
+    &load_library( "simpat-keys.pl" ) ;
+    &load_library( "simpat-file-cmd.pl" ) ;
+    &load_library( "simpat-simulation-cmd.pl" ) ;
+    &load_library( "simpat-simulation-frm.pl" ) ;
+    &load_library( "simpat-options-frm.pl" ) ;
+    &load_library( "simpat-help-cmd.pl" ) ;
+    &load_library( "simpat-help-frm.pl" ) ;
+
+    &load_library( "life.spr" ) ;
+
+    &load_library( "tk-text.pl" ) ;
+    &load_library( "misc.pl" ) ;
+
+    $Win->CmdLine() ;
+    $Win->title( "Simpat" ) ; 
+    &file::new( 1 ) ;
+    $Win->packPropagate( 0 ) ;
+    &cursor() ;
+}
+
+
+BEGIN {
+    $SIG{__WARN__} = sub {
+        if( $WarnInDialogue and defined $Win ) {
+            &cursor( 'clock' ) ;
+
+            my $msg = $Win->MesgBox(
+                            -title => "Simpat Error",
+                            -text  => $_[0],
+                            -icon  => 'ERROR',
+                            ) ;
+            $msg->Show ;
+
+            &cursor() ;
+        }
+        else {
+            print STDOUT join( "\n", @_ ), "\n" ;
+        }
+    } ;
+}
+
+
+sub message {
+    my( $type, $title, $text ) = @_ ;
+
+    if( defined $Win ) {
+        my $msg = $Win->MesgBox(
+                        -title => "Simpat $title $type",
+                        -text  => "$text.",
+                        -icon  => uc $type,
+                        ) ;
+        $msg->Show ;
+    }
+    else {
+        print STDOUT "$title $type: $text.\n" ; 
+    }
+}
+
+
+sub set_consts {
+    # No dependencies.
+}
+
+
+sub cursor {
+
+    my $cursor = shift ;
+
+    # Watch has highest priority, then all others equally.
+    # undef signifies return to previous.
+    if( ( not defined $cursor ) or
+        ( $cursor eq 'watch' ) or
+        ( $Cursor ne 'watch' ) ) {
+        if( not defined $cursor and $Cursor eq 'watch' ) {
+            --$Waiting ;
+            $cursor = $Waiting == 0 ? 'left_ptr' : 'watch' ;
+		}
+		elsif( defined $cursor and $cursor eq 'watch' ) {
+            ++$Waiting ;
+		}
+        $Cursor = defined $cursor ? $cursor : 'left_ptr' ;
+		$Win->configure( -cursor => $Cursor ) 
+     }
+}
+
+
+sub read_opts {
+
+    return unless -e $Const{OPTS_FILE} ;
+
+    if( open( IN, $Const{OPTS_FILE} ) ) {
+        local $_ ;
+        while( <IN> ) {
+            next if /^#/o or /^\s*$/o ;
+            chomp ;
+            my( $key, $val ) = /^([^\s:]+)\s*:\s*(.*)/o ;
+            $val = $1 if $val =~ /([^#]+)#/o ;
+            $val =~ s/\s+$//o ;
+            $Opt{uc $key} = $val ;
+        }
+        close IN ;
+        &opts_check ;
+    }
+    else {
+        warn "Failed to read $Const{OPTS_FILE}: $!.\n" ;
+    }
+}
+
+
+sub write_opts {
+
+    if( open( OUT, ">$Const{OPTS_FILE}" ) ) {
+        local $_ ;
+        foreach ( sort keys %Opt ) {
+            print OUT "$_: $Opt{$_}\n" ;
+        }
+        close OUT ;
+        $Global{WROTE_OPTS} = 1 ;
+    }
+    else {
+        warn "Failed to write $Const{OPTS_FILE}: $!.\n" ;
+    }
+}
+
+
+sub load_library {
+    my $file = shift ;
+    
+    unless( my $return = do "${file}" ) {
+        my $warned = 0 ;
+        warn "Failed to parse $file: $@.\n", 
+            $warned = 1 if $@ ;
+        warn "Failed to do $file: $!\n",     
+            $warned = 1 if not $warned and not defined $return ;
+        warn "Failed to run $file.\n",       
+            $warned = 1 if not $warned and $return ;
+        die "Failed to load $file.\n" if $DieOnWarn ;
+    }
+}
+
+
+__END__
+
+
+=pod SCRIPT CATEGORIES
+
+Simulation
+Graphics
+
+=pod DESCRIPTION
+
+Perl/Tk simulation tool for cellular automata and the like 
+
+=pod PREREQUISITES
+
+Pragmas:
+
+C<strict>
+C<lib>
+
+Modules:
+
+C<Tk>
+C<Tk::FileSelect>
+C<Tk::MesgBox>
+C<File::Basename>
+C<Cwd>
+C<FindBin>
+
+=pod COREQUISITES
+
+
+=pod OSNAMES
+
+Developed under:
+Linux/X-Windows
+
+Known to run under:
+Win32
+
+=pod LICENSE
+
+Same as Perl
+
+=cut

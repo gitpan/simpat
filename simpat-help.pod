@@ -1,0 +1,170 @@
+# $Id: simpat-help.pod,v 1.3 1999/04/08 20:00:32 root Exp $
+
+# Copyright (c) Mark Summerfield 1999. All Rights Reserved.
+# May be used/distributed under the same terms as Perl.
+
+=pod
+
+=head1 Simpat Help
+
+Press <C<Escape>> or <C<q>> to close this help window; scroll using
+the scrollbar, arrow keys, <C<PageUp>> or <C<PageDown>>.
+
+=head2 Mouse
+
+C<Left click>ing will draw on the canvas, C<Right click>ing will delete from
+the canvas - this allows you to draw your own shapes onto the canvas before
+or during a simulation.
+
+=head2 Keystrokes
+
+=over
+
+=item *
+
+C<Ctrl-q>	Quit Simpat (with prompt to save if necessary).
+
+=item
+
+C<[F1]>	Invoke this help window.
+
+=back
+
+=head2 Statusbar
+
+At the bottom of the main window is a status bar. It is divided into two
+sections which are described below in left to right order. 
+
+=over
+
+=item 1
+
+The first section shows the current generation.
+
+=item
+
+The second section provides brief information.
+
+=back
+
+
+=head2 File Menu
+
+=over
+
+=item *
+
+B<New> - This will create a new blank simulation. If you save it you
+will be prompted for a filename with the B<Save As> dialogue.
+
+=item
+
+B<Open>	This will open an existing simulation. You will be presented with
+a file selection dialogue from which to choose the file.
+
+=item
+
+B<Save> - This will save the existing simulation. If the simulation is
+new you will be prompted for a filename with the B<Save As> dialogue.
+
+=item
+
+B<Save As> - This will present you with a file selection dialogue. You select
+the path and enter the new filename to which the simulation will be saved.
+
+=item
+
+B<Options> - This will invoke the options dialogue.
+
+=item
+
+B<Quit> - This will quit the program. If the simulation has had unsaved
+changes you will be prompted for a filename with the B<Save As> dialogue.
+
+=item
+
+B<1..9> - Simpat remembers the last nine files opened or saved. By
+selecting one of these the file will be reopened. If the filename is I<(None)>
+then the B<Open> dialogue will be invoked.
+
+=back
+
+
+=head2 Simulation Menu
+
+=over
+
+=item *
+
+B<Rules> - choose a set of rules to use for the simulation. The default set
+supplied is C<life.spr> which gives the rules for Conway's life.
+
+=item
+
+B<Properties> - invoke a dialogue through which the user can change the
+parameters for the rules being used. 
+
+=back
+
+=head2 Scale Menu
+
+This allows you to set the scale, the larger the scale the larger the
+coloured squares, and the fewer of them and the faster the simulation will
+run.
+
+=head2 Help Menu
+
+=over
+
+=item *
+
+B<Help> - invoke this help screen.
+
+=item
+
+B<About> - invoke Simpat's about box.
+
+=back
+
+=head2 Options dialogue
+
+Allows you to set global options for all simulations.
+
+
+=head2 Options file
+
+Options should be set using the Options dialogue.
+User options are stored in C<~/.simpat-opts> (C<SIMPAT.INI> under Win32). 
+
+Any options you change in this file take precedence over the default
+options. To reinstate a default option delete or comment out (with
+C<#>) the options you wish to reinstate - the next time you run the
+program the defaults will be back.
+
+The options currently supported are listed below. They may be changed by
+the user unless specified otherwise.
+
+=over
+
+=item
+
+C<DIR> - This is the initial working directory.
+
+=item
+
+C<LAST_FILE> - I<Should not be changed.>
+
+=item
+
+C<LAST_FILE_>I<n> - The absolute paths and names of the I<n>th file used; the
+last nine files opened or saved are listed here. (I<n> is in the range 1..9.)
+
+=back
+
+=head2 Copyright
+
+Copyright (c) Mark Summerfield 1999. All Rights Reserved.
+
+Simpat may be used/distributed under the same terms as Perl.
+
+=cut

@@ -1,0 +1,162 @@
+#!/usr/bin/perl -w
+
+# $Id: life.spr,v 1.2 1999/04/08 20:00:32 root Exp $
+
+# (c) Mark Summerfield 1999. All Rights Reserved.
+# May be used/distributed under the same terms as Perl.
+
+use strict ;
+
+# Whenever this file is loaded it sets up its params and subroutines.
+# You may use the following subroutines:
+#   &canvas::read_pixel( $x, $y )
+#   &canvas::write_pixel( $x, $y, $colour )
+# and the following constant:
+#   $main::Const{DEAD_COLOUR}
+# and the following variables:
+#   $main::Opt{WIDTH}
+#   $main::Opt{HEIGHT}
+#   $main::Opt{VERBOSE}
+# You may define as many %Param elements as you like but this should probably 
+# be less than about 20; you MUST define all the %Routine's listed here, even 
+# if they do nothing.
+
+%Param      = () ;
+$Param{'L'} = 3 ;
+$Param{'U'} = 3 ;
+$Param{'K'} = 2 ;
+$Param{'Y'} = 3 ;
+
+%Routine             = () ;
+$Routine{RULENAME}   = sub { 'life' } ;
+$Routine{INITIALISE} = \&life::initialise ;
+$Routine{START}      = \&life::start ;
+$Routine{STEPBACK}   = \&life::stepback ;
+$Routine{STEP}       = \&life::step ;
+$Routine{STEPTO}     = \&life::stepto ;
+$Routine{PAUSE}      = \&life::pause ;
+$Routine{STOP}       = \&life::stop ;
+$Routine{CLEAR}      = \&life::clear ;
+
+
+package life ;
+
+
+sub initialise {
+    package main ;
+    
+    my( $x, $y, $colour ) ;
+
+    $colour = sprintf "#%02X%02X%02X", 
+                int( rand() * 250 ),  
+                int( rand() * 250 ),  
+                int( rand() * 250 ) ;
+
+    for( 0..24 ) {
+        $x = rand() * $Opt{WIDTH} ;
+        $y = rand() * $Opt{HEIGHT} ;
+        &canvas::write_pixel( $x, $y, $colour ) ; 
+        for( 0..16 ) {
+			&canvas::write_pixel( 
+			    $x + ( rand() * 4 ), 
+			    $y + ( rand() * 4 ), 
+			    $colour 
+			    ) ; 
+        }
+    }
+}
+
+
+sub start {
+    package main ;
+
+	print STDERR "Life rules - no additional start required.\n" 
+	if $Opt{VERBOSE} ;
+}
+
+
+sub stepback {
+    package main ;
+
+	print STDERR "Life rules stepback not implemented.\n" 
+	if $Opt{VERBOSE} ;
+}
+
+
+sub step {
+    package main ;
+    # This routine is the most called, so it is worth trying to make it as
+    # efficient as possible, especially in its loop.
+
+	my( $x, $y, $n, $old_colour, $colour, $new_colour ) ;
+
+    # Colour of this generation
+    $colour = sprintf "#%02X%02X%02X", 
+                int( rand() * 250 ),  
+                int( rand() * 250 ),  
+                int( rand() * 250 ) ;
+
+    # Work out next generation in memory
+	for( my $x = 0 ; $x < $Opt{WIDTH} ; $x++ ) {
+		for( my $y = 0 ; $y < $Opt{HEIGHT} ; $y++ ) {
+			# Count the neighbours
+			$n = 0 ;
+			$n++ if &canvas::read_pixel( $x - 1, $y - 1 ) ne $Const{DEAD_COLOUR} ;
+			$n++ if &canvas::read_pixel( $x - 1, $y     ) ne $Const{DEAD_COLOUR} ;
+			$n++ if &canvas::read_pixel( $x - 1, $y + 1 ) ne $Const{DEAD_COLOUR} ;
+			$n++ if &canvas::read_pixel( $x,     $y - 1 ) ne $Const{DEAD_COLOUR} ;
+			$n++ if &canvas::read_pixel( $x,     $y + 1 ) ne $Const{DEAD_COLOUR} ;
+			$n++ if &canvas::read_pixel( $x + 1, $y - 1 ) ne $Const{DEAD_COLOUR} ;
+			$n++ if &canvas::read_pixel( $x + 1, $y     ) ne $Const{DEAD_COLOUR} ;
+			$n++ if &canvas::read_pixel( $x + 1, $y + 1 ) ne $Const{DEAD_COLOUR} ;
+
+            $old_colour = &canvas::read_pixel( $x, $y )  ;
+			$new_colour = $Const{DEAD_COLOUR} ;
+
+            if( $old_colour eq $Const{DEAD_COLOUR} ) {
+				$new_colour = $colour 
+                if $Param{'L'} <= $n and $n <= $Param{'U'} ; 
+			}
+			else {
+				$new_colour = $old_colour 
+                if $Param{'K'} <= $n and $n <= $Param{'Y'} ; 
+			}
+			&canvas::write_pixel( $x, $y, $new_colour ) ;
+        }
+    }
+}
+
+
+sub stepto {
+    package main ;
+
+	print STDERR "Life rules stepto not implemented.\n" 
+	if $Opt{VERBOSE} ;
+}
+
+
+sub pause {
+    package main ;
+
+	print STDERR "Life rules - no additional pause required.\n" 
+	if $Opt{VERBOSE} ;
+}
+
+
+sub stop {
+    package main ;
+
+	print STDERR "Life rules - no additional stop required.\n" 
+	if $Opt{VERBOSE} ;
+}
+
+
+sub clear {
+    package main ;
+
+	print STDERR "Life rules - no additional clear required.\n" 
+	if $Opt{VERBOSE} ;
+}
+
+
+1 ;
